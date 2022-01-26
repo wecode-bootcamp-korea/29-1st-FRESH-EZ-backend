@@ -1,7 +1,5 @@
 from django.db import models
 
-# Create your models here.
-
 class Subscription(models.Model):
     size            = models.CharField(max_length=30, null=False)
     food_day_count  = models.IntegerField()
@@ -14,4 +12,4 @@ class Subscription(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'subscription'
+        db_table = 'subscriptions'
