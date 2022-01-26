@@ -32,14 +32,15 @@ class PurchaseMethod(models.Model):
         db_table = 'purchase_methods'
 
 class ProductPurchaseMethod(models.Model):
-    product = models.ForeignKey(Product,on_delete=models.DO_NOTHING, null=False)
-    purchase_method = models.ForeignKey(PurchaseMethod,on_delete=models.DO_NOTHING, null=False)
+    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING, null=False)
+    purchase_method = models.ForeignKey(PurchaseMethod, on_delete=models.DO_NOTHING, null=False)
 
     class Meta:
         db_table = 'products_purchase_methods'
 
 class ProductImage(models.Model):
-    product_image = models.ImageField()
+    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING, null=False)
+    image_url = models.ImageField()
 
     class Meta:
         db_table = 'products_images'
