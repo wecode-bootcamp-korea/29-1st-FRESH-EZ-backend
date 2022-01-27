@@ -389,3 +389,5 @@ uploader_product.py
 Product.csv
 Product_middle_table.csv
 Product_option.csv
+freshez/__pycache__/settings.cpython-39.pyc
+freshez/__pycache__/urls.cpython-39.pyc
