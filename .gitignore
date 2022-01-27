@@ -390,13 +390,8 @@ Product.csv
 Product_middle_table.csv
 Product_option.csv
 *.log
-
 *.pot
-
 *.pyc
-
 */*/*/__pycache__/
-
 */*/__pycache__/
-
 */__pycache__/
