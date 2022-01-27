@@ -383,3 +383,9 @@ zsdoc/data
 
 my_settings.py
 .gitignore
+uploader_option.py
+uploader_middle_table.py
+uploader_product.py
+Product.csv
+Product_middle_table.csv
+Product_option.csv
