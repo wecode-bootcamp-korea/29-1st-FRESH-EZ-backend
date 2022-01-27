@@ -1,5 +1,4 @@
 from django.db import models
-from subscription.models import Subscription
 
 class Allergy(models.Model):
     name = models.CharField(null=False, max_length=30)
@@ -15,7 +14,6 @@ class User(models.Model):
     phone        =  models.CharField(null=False, max_length=30)
     birth        = models.DateField(null=False)
     sex          = models.CharField(null=False, max_length=30)
-    subscription = models.ForeignKey(Subscription, blank=True, null=True, on_delete=models.CASCADE)
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)
 
