@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import Allergy,User
+from user.models import Allergy, User
 
 class Option(models.Model):
     name = models.CharField(max_length=30, null=False)
@@ -26,7 +26,6 @@ class Product(models.Model):
 
 class PurchaseMethod(models.Model):
     name = models.CharField(max_length=30, null=False)
-    Product = models.ForeignKey(Product, on_delete=models.DO_NOTHING,null=False)
 
     class Meta:
         db_table = 'purchase_methods'
@@ -53,7 +52,7 @@ class Cart(models.Model):
         db_table = 'cart'
 
 class ProductAllergy(models.Model):
-    allergy = models.ForeignKey(Allergy, on_delete=models.DO_NOTHING)
+    allergy_id = models.ForeignKey(Allergy, on_delete=models.DO_NOTHING)
     product = models.ForeignKey(Product, on_delete=models.DO_NOTHING)
 
     class Meta:
@@ -65,4 +64,3 @@ class ProductOption(models.Model):
 
     class Meta:
         db_table = 'products_options'
-
