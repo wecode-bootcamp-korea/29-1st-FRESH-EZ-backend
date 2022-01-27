@@ -36,13 +36,13 @@ class SignUpView(View):
                 birth    = birth,
                 sex      = sex,
             )
-
-            for allergy_name in data['allergy']:
-                allergy = Allergy.objects.get(name=allergy_name)
-                UserAllergy.objects.create(
-                    user    = user,
-                    allergy = allergy,
-                )
+            if 'allergy' in data:
+                for allergy_name in data['allergy']:
+                    allergy = Allergy.objects.get(name=allergy_name)
+                    UserAllergy.objects.create(
+                        user    = user,
+                        allergy = allergy,
+                    )
 
             return JsonResponse({'message' :'SUCCESS'}, status = 201 )
         except KeyError:
