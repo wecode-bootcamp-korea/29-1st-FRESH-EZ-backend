@@ -388,4 +388,4 @@ my_settings.py
 *.pyc
 */*/*/__pycache__/
 */*/__pycache__/
-*/__pycache__
+*/__pycache__/
