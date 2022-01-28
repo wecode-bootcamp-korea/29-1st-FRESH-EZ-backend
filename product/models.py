@@ -26,7 +26,6 @@ class Product(models.Model):
 
 class PurchaseMethod(models.Model):
     name = models.CharField(max_length=30, null=False)
-    Product = models.ForeignKey(Product, on_delete=models.DO_NOTHING,null=False)
 
     class Meta:
         db_table = 'purchase_methods'
