@@ -104,7 +104,6 @@ class SubscribeDetailView(View):
     def get(self, request, category_id):
         category = Category.objects.get(id=category_id)
         product_instance_list = Product.objects.filter(category=category.id)
-        print(product_instance_list)
         product_name_list = []
         product_image_list = []
         product_price_list = []
