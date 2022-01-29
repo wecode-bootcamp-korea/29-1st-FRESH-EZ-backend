@@ -1,5 +1,6 @@
 import json
 import datetime
+import random
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -42,10 +43,20 @@ class SubscribeOptionView(View):
                 food_start=subscribe_start,
                 food_end=subscribe_end,
             )
-            for i in range(1, 4):
+
+            food_count = food_day_count * food_week_count * food_period
+
+            product_list = []
+            for i in range(0, food_count):
+                number = random.randint(1, 71)
+                while number in product_list:
+                    number = random.randint(1, 71)
+                product_list.append(number)
+
+            for product_id in product_list:
                 SubscriptionProduct.objects.create(
                     subscription=subscribe,
-                    product=Product.objects.get(id=i)
+                    product=Product.objects.get(id=product_id)
                 )
         elif "product_list" in data:
             subscribe = Subscription.objects.create(
@@ -57,10 +68,10 @@ class SubscribeOptionView(View):
                 food_start=subscribe_start,
                 food_end=subscribe_end,
             )
-            for i in product_list:
+            for product_id in product_list:
                 SubscriptionProduct.objects.create(
                     subscription=subscribe,
-                    product=Product.objects.get(id=i)
+                    product=Product.objects.get(id=product_id)
                 )
 
         return JsonResponse({
