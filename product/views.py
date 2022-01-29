@@ -23,7 +23,7 @@ class ProductDetailView(View):
             "name" : product.name,
             "category" : product.category.name,
             "price" : product.price,
-            "desc" : product.description,
+            "desc" : product.desc,
             "allergy" : allergy_list,
             "title_image_url" : str_title_image_url,
         }, status=200)
