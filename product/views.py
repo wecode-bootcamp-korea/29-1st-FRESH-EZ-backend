@@ -34,6 +34,8 @@ class SubscribeOptionView(View):
         subscribe_end    = datetime.datetime(year, month, day) + datetime.timedelta(days=30)
         size             = Option.objects.get(id=size)
 
+        food_count = food_day_count * food_week_count * food_period
+
         if "product_list" not in data:
             subscribe = Subscription.objects.create(
                 user=user,
@@ -44,8 +46,6 @@ class SubscribeOptionView(View):
                 food_start=subscribe_start,
                 food_end=subscribe_end,
             )
-
-            food_count = food_day_count * food_week_count * food_period
 
             product_list = []
             for i in range(0, food_count):
@@ -77,6 +77,7 @@ class SubscribeOptionView(View):
 
         return JsonResponse({
             "message" : "SUCCESS",
+            "food_length" : food_count,
         })
 
 class ProductDetailView(View):
