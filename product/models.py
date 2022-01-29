@@ -17,7 +17,8 @@ class Product(models.Model):
     name = models.CharField(max_length=30, null=False)
     category = models.ForeignKey(Category, on_delete=models.DO_NOTHING, null=False)
     price = models.IntegerField(null=False)
-    description = models.TextField()
+    desc = models.TextField()
+    small_desc = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
