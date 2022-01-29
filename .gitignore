@@ -383,3 +383,9 @@ zsdoc/data
 
 my_settings.py
 .gitignore
+*.log
+*.pot
+*.pyc
+*/*/*/__pycache__/
+*/*/__pycache__/
+*/__pycache__/
