@@ -20,7 +20,7 @@ class Subscription(models.Model):
 
 class SubscriptionProduct(models.Model):
     subscription = models.ForeignKey("Subscription", on_delete=models.DO_NOTHING, null=True)
-    product = models.ForeignKey("Product", on_delete=models.DO_NOTHING, null=True)
+    product = models.ForeignKey("product.Product", on_delete=models.DO_NOTHING, null=True)
 
     class Meta:
         db_table = 'food_schedule_product'

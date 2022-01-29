@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 from django.views import View
 
-from product.models import Product
+from product.models import Product, Category, Option
 from subscription.models import Subscription, SubscriptionProduct
 from user.models import User
 
@@ -16,11 +16,11 @@ class SubscribeOptionView(View):
     def post(self, request):
         data  = json.loads(request.body)
 
-        user            = User.objects.get(email="wepungsan@gmail.com")
+        user            = User.objects.get(email=data['email'])
         size            = data['size']
-        food_day_count  = data['food_day_count']
-        food_week_count = data['food_week_count']
-        food_period     = data['food_period']
+        food_day_count  = int(data['food_day_count'])
+        food_week_count = int(data['food_week_count'])
+        food_period     = int(data['food_period'])
         food_start      = data['food_start']
 
         if "product_list" in data:
@@ -32,6 +32,7 @@ class SubscribeOptionView(View):
         day              = int(day)
         subscribe_start  = datetime.datetime(year, month, day)
         subscribe_end    = datetime.datetime(year, month, day) + datetime.timedelta(days=30)
+        size             = Option.objects.get(id=size)
 
         if "product_list" not in data:
             subscribe = Subscription.objects.create(
@@ -79,7 +80,7 @@ class SubscribeOptionView(View):
         })
 
 class ProductDetailView(View):
-    def post(self, request, pk):
+    def get(self, request, pk):
         product = get_object_or_404(Product, id=pk)
 
         productimage = product.productimage_set.all()
@@ -93,7 +94,33 @@ class ProductDetailView(View):
             "name" : product.name,
             "category" : product.category.name,
             "price" : product.price,
-            "desc" : product.description,
+            "desc" : product.desc,
             "allergy" : allergy_list,
             "title_image_url" : str_title_image_url,
+        }, status=200)
+
+class SubscribeDetailView(View):
+    def get(self, request, category_id):
+        category = Category.objects.get(id=category_id)
+        product_instance_list = Product.objects.filter(category=category.id)
+        print(product_instance_list)
+        product_name_list = []
+        product_image_list = []
+        product_price_list = []
+
+        for product in product_instance_list:
+            product_name_list.append(product.name)
+
+            productimage = product.productimage_set.all()
+            title_image_url = productimage[0].image_url
+            str_title_image_url = str(title_image_url)
+            product_image_list.append(str_title_image_url)
+
+            product_price_list.append(product.price)
+
+        return JsonResponse({
+            "message": "SUCCESS",
+            "products" : product_name_list,
+            "image_list" : product_image_list,
+            "price": product_price_list,
         }, status=200)
