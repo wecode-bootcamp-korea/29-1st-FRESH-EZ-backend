@@ -5,8 +5,11 @@ import random
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
+import jwt
+
 from django.views import View
 
+from my_settings import JWT_SECRET_KEY, ALGORITHM
 from product.models import Product, Category, Option
 from subscription.models import Subscription, SubscriptionProduct
 from user.models import User
@@ -16,12 +19,17 @@ class SubscribeOptionView(View):
     def post(self, request):
         data  = json.loads(request.body)
 
-        user            = User.objects.get(email=data['email'])
+        token           = data['jwt']
+        email           = data['email']
         size            = data['size']
         food_day_count  = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
         food_period     = int(data['food_period'])
         food_start      = data['food_start']
+        
+        payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+        user         = User.objects.get(id=payload['id'])
+        # user         = User.objects.get(email=email)
 
         if "product_list" in data:
             product_list = data['product_list']
