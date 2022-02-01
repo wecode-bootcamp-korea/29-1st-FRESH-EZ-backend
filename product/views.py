@@ -10,7 +10,7 @@ import jwt
 from django.views import View
 
 from my_settings import JWT_SECRET_KEY, ALGORITHM
-from product.models import Product, Category, Option
+from product.models import Product, Category, Option, Cart
 from subscription.models import Subscription, SubscriptionProduct
 from user.models import User
 
@@ -89,8 +89,8 @@ class SubscribeOptionView(View):
         })
 
 class ProductDetailView(View):
-    def get(self, request, pk):
-        product = get_object_or_404(Product, id=pk)
+    def get(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
 
         productimage = product.productimage_set.all()
         title_image_url = productimage[0].image_url
@@ -137,13 +137,18 @@ class CartList(View):
     def post(self, request):
         data = json.loads(request.body)
 
-        # token   = data['jwt']
-        email   = data['email']
+        try:
+            # 유저 확인
+            # token   = data['jwt']
+            email   = data['email']
 
-        # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
-        # user    = User.objects.get(id=payload['id'])
-        user    = User.objects.get(email=email)
+            # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+            # user    = User.objects.get(id=payload['id'])
+            user    = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return JsonResponse({"message" : "INVALID_USER (email)"}, status=401)
 
+        # 구독 장바구니
         subscription_instance_list = Subscription.objects.filter(user=user)
         subscription_list = []
         for subscription in subscription_instance_list:
@@ -153,8 +158,8 @@ class CartList(View):
                 food_total_price = 0
                 for food in food_instance_list:
                     food_list.append({
-                        "food_name"  : food.product.name,
-                        "food_price" : food.product.price,
+                        "subscription_food_name"  : food.product.name,
+                        "subscription_food_price" : food.product.price,
                     })
                     food_total_price += food.product.price
 
@@ -171,10 +176,91 @@ class CartList(View):
                     "food_total_price" : food_total_price,
                 })
 
+        # 단품 장바구니
+        cart_instance_list = Cart.objects.filter(user=user)
+        cart_list = []
+        total_price = 0
+        for cart in cart_instance_list:
+            cart_list.append({
+                "cart_id": cart.id,
+                "food_name": cart.product.name,
+                "food_price": cart.product.price,
+                "food_count": cart.count,
+            })
+            total_price += cart.product.price
+
         return JsonResponse({
             "message": "SUCCESS",
-            "subscription_list" : subscription_list,
+            "total_price": total_price,
+            "cart_list": cart_list,
         }, status=200)
 
+class CartAdd(View):
+    def post(self, request):
+        data = json.loads(request.body)
 
+        try:
+            # 유저 확인
+            # token   = data['jwt']
+            email = data['email']
 
+            # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+            # user    = User.objects.get(id=payload['id'])
+            user = User.objects.get(email=email)
+
+            # 상품 확인
+            product_id = data['product_id']
+
+            product = Product.objects.get(id=product_id)
+        except User.DoesNotExist:
+            return JsonResponse({"message": "INVALID_USER (email)"}, status=401)
+        except Product.DoesNotExist:
+            return JsonResponse({"message": "INVALID_ERROR"}, status=401)
+
+        product_count = int(data['count'])
+
+        cart = Cart.objects.create(
+            user=user,
+            product=product,
+            count=product_count,
+        )
+
+        return JsonResponse({
+            "message": "SUCCESS",
+            "cart_user": cart.user.name,
+            "cart_product": cart.product.name,
+            "cart_count": cart.count,
+        }, status=200)
+
+class CartDelete(View):
+    def post(self, request):
+        data = json.loads(request.body)
+
+        try:
+            # 유저 확인
+            # token   = data['jwt']
+            email   = data['email']
+
+            # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+            # user    = User.objects.get(id=payload['id'])
+            user    = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return JsonResponse({"message" : "INVALID_USER (email)"}, status=401)
+
+        if 'cart_id' in data:
+            cart_id = int(data['cart_id'])
+
+            cart_instance_list = Cart.objects.filter(id=cart_id)
+            for cart in cart_instance_list:
+                cart.delete()
+
+        if 'subscription_id' in data:
+            subscription_id = data['subscription_id']
+
+            subscription_instance_list = Subscription.objects.filter(id=subscription_id)
+            for subscription in subscription_instance_list:
+                subscription.delete()
+
+        return JsonResponse({
+            "message": "SUCCESS",
+        }, status=200)
