@@ -12,15 +12,15 @@ class Subscription(models.Model):
     food_period     = models.IntegerField()
     food_start      = models.DateField()
     food_end        = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'subscriptions'
 
 class SubscriptionProduct(models.Model):
-    subscription = models.ForeignKey("Subscription", on_delete=models.DO_NOTHING, null=True)
-    product = models.ForeignKey("product.Product", on_delete=models.DO_NOTHING, null=True)
+    subscription = models.ForeignKey("Subscription", on_delete=models.DO_NOTHING, null=True, related_name="subscription_food")
+    product      = models.ForeignKey("product.Product", on_delete=models.DO_NOTHING, null=True, related_name="subscription_food")
 
     class Meta:
         db_table = 'subscriptions_products'

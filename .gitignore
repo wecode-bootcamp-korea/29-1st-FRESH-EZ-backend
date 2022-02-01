@@ -410,4 +410,4 @@ CSV_Product_option.csv
 CSV_Purchase_method.csv
 CSV_User.csv
 
-migrations
+*/migrations/*
