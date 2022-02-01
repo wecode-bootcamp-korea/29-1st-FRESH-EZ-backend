@@ -26,6 +26,7 @@ class SubscribeOptionView(View):
         food_week_count = int(data['food_week_count'])
         food_period     = int(data['food_period'])
         food_start      = data['food_start']
+        category_id     = int(data['category_id'])
         
         # payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
         # user         = User.objects.get(id=payload['id'])
@@ -43,6 +44,7 @@ class SubscribeOptionView(View):
         size             = Option.objects.get(id=size)
 
         food_count = food_day_count * food_week_count * food_period
+        food_list_length = food_count
 
         if "product_list" not in data:
             subscribe = Subscription.objects.create(
@@ -56,24 +58,22 @@ class SubscribeOptionView(View):
             )
 
             cycle_count = food_count // 5
-            if cycle_count % 5 != 0:
+            if food_count % 5 != 0:
                 cycle_count += 1
-            print(food_count)
-            print(cycle_count)
 
-            number_list = []
+            product_instance_list = []
             for i in range(0, cycle_count):
                 if food_count >= 5:
-                    number_list += list(range(1, 6))
+                    product_instance_list += Product.objects.filter(category=category_id)[:5]
                     food_count -= 5
                 elif food_count < 5:
-                    number_list += list(range(1, food_count + 1))
+                    product_instance_list += Product.objects.filter(category=category_id)[:food_count]
                     food_count = 0
 
-            for product_id in number_list:
+            for product in product_instance_list:
                 SubscriptionProduct.objects.create(
                     subscription=subscribe,
-                    product=Product.objects.get(id=product_id)
+                    product=Product.objects.get(id=product.id)
                 )
         elif "product_list" in data:
             subscribe = Subscription.objects.create(
@@ -93,7 +93,7 @@ class SubscribeOptionView(View):
 
         return JsonResponse({
             "message" : "SUCCESS",
-            "food_length" : food_count,
+            "food_length" : food_list_length,
         })
 
 class ProductDetailView(View):
@@ -200,6 +200,7 @@ class CartList(View):
         return JsonResponse({
             "message": "SUCCESS",
             "total_price": total_price,
+            "subscription_list": subscription_list,
             "cart_list": cart_list,
         }, status=200)
 
