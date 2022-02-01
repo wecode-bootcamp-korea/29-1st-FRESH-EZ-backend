@@ -19,17 +19,17 @@ class SubscribeOptionView(View):
     def post(self, request):
         data  = json.loads(request.body)
 
-        token           = data['jwt']
-        # email           = data['email']
+        # token           = data['jwt']
+        email           = data['email']
         size            = data['size']
         food_day_count  = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
         food_period     = int(data['food_period'])
         food_start      = data['food_start']
         
-        payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
-        user         = User.objects.get(id=payload['id'])
-        # user         = User.objects.get(email=email)
+        # payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+        # user         = User.objects.get(id=payload['id'])
+        user         = User.objects.get(email=email)
 
         if "product_list" in data:
             product_list = data['product_list']
@@ -55,14 +55,22 @@ class SubscribeOptionView(View):
                 food_end=subscribe_end,
             )
 
-            product_list = []
-            for i in range(0, food_count):
-                number = random.randint(1, 71)
-                while number in product_list:
-                    number = random.randint(1, 71)
-                product_list.append(number)
+            cycle_count = food_count // 5
+            if cycle_count % 5 != 0:
+                cycle_count += 1
+            print(food_count)
+            print(cycle_count)
 
-            for product_id in product_list:
+            number_list = []
+            for i in range(0, cycle_count):
+                if food_count >= 5:
+                    number_list += list(range(1, 6))
+                    food_count -= 5
+                elif food_count < 5:
+                    number_list += list(range(1, food_count + 1))
+                    food_count = 0
+
+            for product_id in number_list:
                 SubscriptionProduct.objects.create(
                     subscription=subscribe,
                     product=Product.objects.get(id=product_id)
