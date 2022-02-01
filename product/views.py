@@ -20,7 +20,7 @@ class SubscribeOptionView(View):
         data  = json.loads(request.body)
 
         token           = data['jwt']
-        email           = data['email']
+        # email           = data['email']
         size            = data['size']
         food_day_count  = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
@@ -132,3 +132,49 @@ class SubscribeDetailView(View):
             "image_list" : product_image_list,
             "price": product_price_list,
         }, status=200)
+
+class CartList(View):
+    def post(self, request):
+        data = json.loads(request.body)
+
+        # token   = data['jwt']
+        email   = data['email']
+
+        # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+        # user    = User.objects.get(id=payload['id'])
+        user    = User.objects.get(email=email)
+
+        subscription_instance_list = Subscription.objects.filter(user=user)
+        subscription_list = []
+        for subscription in subscription_instance_list:
+            if not subscription.receipt.exists():
+                food_instance_list = subscription.subscription_food.all()
+                food_list = []
+                food_total_price = 0
+                for food in food_instance_list:
+                    food_list.append({
+                        "food_name"  : food.product.name,
+                        "food_price" : food.product.price,
+                    })
+                    food_total_price += food.product.price
+
+                subscription_list.append({
+                    "id"               : subscription.id,
+                    "user"             : subscription.user.name,
+                    "size"             : subscription.size.name,
+                    "food_day_count"   : subscription.food_day_count,
+                    "food_week_count"  : subscription.food_week_count,
+                    "food_period"      : subscription.food_period,
+                    "food_start"       : subscription.food_start,
+                    "food_end"         : subscription.food_end,
+                    "food_list"        : food_list,
+                    "food_total_price" : food_total_price,
+                })
+
+        return JsonResponse({
+            "message": "SUCCESS",
+            "subscription_list" : subscription_list,
+        }, status=200)
+
+
+
