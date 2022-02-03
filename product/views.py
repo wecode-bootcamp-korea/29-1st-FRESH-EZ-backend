@@ -19,8 +19,8 @@ class SubscribeOptionView(View):
     def post(self, request):
         data  = json.loads(request.body)
 
-        # token           = data['jwt']
-        email           = data['email']
+        token           = data['jwt']
+        # email           = data['email']
         size            = data['size']
         food_day_count  = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
@@ -28,9 +28,9 @@ class SubscribeOptionView(View):
         food_start      = data['food_start']
         category_id     = int(data['category_id'])
         
-        # payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
-        # user         = User.objects.get(id=payload['id'])
-        user         = User.objects.get(email=email)
+        payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+        user         = User.objects.get(id=payload['id'])
+        # user         = User.objects.get(email=email)
 
         if "product_list" in data:
             product_list = data['product_list']
