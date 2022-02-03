@@ -112,6 +112,7 @@ class ProductDetailView(View):
             "category" : product.category.name,
             "price" : product.price,
             "desc" : product.desc,
+            "small_desc" : product.small_desc,
             "allergy" : allergy_list,
             "title_image_url" : str_title_image_url,
         }, status=200)
