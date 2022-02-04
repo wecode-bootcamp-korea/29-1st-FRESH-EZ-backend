@@ -16,11 +16,27 @@ from user.models import User
 
 
 class SubscribeOptionView(View):
+    # def get(self, request):
+    #     category_id = request.GET.get('category', None)
+    #     product_instance_list = Product.objects.filter(category=category_id)[:5]
+    #
+    #     product_list = []
+    #     for product in product_instance_list:
+    #         product_dict = {}
+    #         product_dict['name']  = product.name
+    #         product_dict['price'] = product.price
+    #         product_list.append(product_dict)
+    #
+    #     return JsonResponse({
+    #         "message": "SUCCESS",
+    #         "product_list": product_list,
+    #     })
+
     def post(self, request):
         data  = json.loads(request.body)
 
-        # token           = data['jwt']
-        email           = data['email']
+        token           = data['jwt']
+        # email           = data['email']
         size            = data['size']
         food_day_count  = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
@@ -28,9 +44,9 @@ class SubscribeOptionView(View):
         food_start      = data['food_start']
         category_id     = int(data['category_id'])
 
-        # payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
-        # user         = User.objects.get(id=payload['id'])
-        user         = User.objects.get(email=email)
+        payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+        user         = User.objects.get(id=payload['id'])
+        # user         = User.objects.get(email=email)
 
         if "product_list" in data:
             product_list = data['product_list']
@@ -58,6 +74,7 @@ class SubscribeOptionView(View):
             )
 
             cycle_count = food_count // 5
+
             if food_count % 5 != 0:
                 cycle_count += 1
 
@@ -91,9 +108,45 @@ class SubscribeOptionView(View):
                     product=Product.objects.get(id=product_id)
                 )
 
+            return JsonResponse({
+                "message" : "SUCCESS",
+                "food_length" : food_list_length,
+            })
+
+class SubscribeTotalPriceView(View):
+    def post(self, request):
+        data = json.loads(request.body)
+
+        category_id = int(data['category_id'])
+        food_day_count = int(data['food_day_count'])
+        food_week_count = int(data['food_week_count'])
+        food_period = int(data['food_period'])
+
+        food_count = food_day_count * food_week_count * food_period
+        food_length = food_count
+
+        cycle_count = food_count // 5
+
+        if food_count % 5 != 0:
+            cycle_count += 1
+
+        product_instance_list = []
+        for i in range(0, cycle_count):
+            if food_count >= 5:
+                product_instance_list += Product.objects.filter(category=category_id)[:5]
+                food_count -= 5
+            elif food_count < 5:
+                product_instance_list += Product.objects.filter(category=category_id)[:food_count]
+                food_count = 0
+
+        total_price = 0
+        for product in product_instance_list:
+            total_price += product.price
+
         return JsonResponse({
-            "message" : "SUCCESS",
-            "food_length" : food_list_length,
+            "message": "SUCCESS",
+            "food_count": food_length,
+            "total_price": total_price,
         })
 
 class ProductDetailView(View):
@@ -112,6 +165,7 @@ class ProductDetailView(View):
             "category" : product.category.name,
             "price" : product.price,
             "desc" : product.desc,
+            "small_desc" : product.small_desc,
             "allergy" : allergy_list,
             "title_image_url" : str_title_image_url,
         }, status=200)
@@ -330,4 +384,3 @@ class ProductListView(View):
 
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=401)
-
