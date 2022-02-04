@@ -10,7 +10,6 @@ from my_settings import JWT_SECRET_KEY, ALGORITHM
 
 class AllergyInfoView(View):
     def get(self, request):
-
         allergies = Allergy.objects.all()
         allergies_list = []
 
@@ -22,6 +21,29 @@ class AllergyInfoView(View):
             allergies_list.append(allergies_dic)
 
         return JsonResponse({'allergies_list' : allergies_list}, status= 201)
+
+class UserAllergyView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            jwt_token = data['jwt_token'].encode()
+            jwt_decoded = jwt.decode(jwt_token, JWT_SECRET_KEY, ALGORITHM)
+            user_id = jwt_decoded['id']
+
+            user_allergies = UserAllergy.objects.filter(user_id=user_id)
+
+            user_allergies_list = []
+
+            for user_allergy in user_allergies:
+                user_allergies_list.append(user_allergy.allergy.pk)
+
+            return JsonResponse({'user_allergies': user_allergies_list}, status=201)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+        except UserAllergy.DoesNotExist:
+            return JsonResponse({'message': 'NO_DATA'}, status=401)
+        except jwt.InvalidSignatureError:
+            return JsonResponse({'message': 'InvalidSignatureError'}, status=401)
 
 class SignUpView(View):
     def post(self,request):

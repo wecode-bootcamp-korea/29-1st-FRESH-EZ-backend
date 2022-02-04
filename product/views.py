@@ -273,3 +273,54 @@ class CartDelete(View):
         return JsonResponse({
             "message": "SUCCESS",
         }, status=200)
+
+class ProductListView(View):
+    def get(self, request, category_id):
+        try:
+            if category_id == None:
+                products = Product.objects.all()
+                products_list = []
+
+                for product in products:
+                    product_image = product.productimage_set.all()
+                    product_image_url = str(product_image[0].image_url)
+                    product_allergy = product.productallergy_set.all()
+                    product_allergy_id = product_allergy[0].allergy.pk
+
+                    product_dic = {
+                        'name': product.name,
+                        'category': product.category.pk,
+                        'price': product.price,
+                        'small_desc' : product.small_desc,
+                        'product_image' : product_image_url,
+                        'product_allergy_id' : product_allergy_id,
+                    }
+                    products_list.append(product_dic)
+
+                return JsonResponse({'products_list': products_list}, status=201)
+
+            else:
+                products = Product.objects.filter(category=category_id)
+                products_list = []
+
+                for product in products:
+                    product_image = product.productimage_set.all()
+                    product_image_url = str(product_image[0].image_url)
+                    product_allergy = product.productallergy_set.all()
+                    product_allergy_id = product_allergy[0].allergy.pk
+
+                    product_dic = {
+                        'name': product.name,
+                        'category': product.category.pk,
+                        'price': product.price,
+                        'small_desc': product.small_desc,
+                        'product_image': product_image_url,
+                        'product_allergy_id': product_allergy_id,
+                    }
+                    products_list.append(product_dic)
+
+                return JsonResponse({'products_list': products_list}, status=201)
+
+        except KeyError:
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=401)
+
