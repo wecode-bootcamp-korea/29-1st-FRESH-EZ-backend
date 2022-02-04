@@ -43,7 +43,7 @@ class SubscribeOptionView(View):
         food_period     = int(data['food_period'])
         food_start      = data['food_start']
         category_id     = int(data['category_id'])
-        
+
         payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
         user         = User.objects.get(id=payload['id'])
         # user         = User.objects.get(email=email)
@@ -108,10 +108,10 @@ class SubscribeOptionView(View):
                     product=Product.objects.get(id=product_id)
                 )
 
-        return JsonResponse({
-            "message" : "SUCCESS",
-            "food_length" : food_list_length,
-        })
+            return JsonResponse({
+                "message" : "SUCCESS",
+                "food_length" : food_list_length,
+            })
 
 class SubscribeTotalPriceView(View):
     def post(self, request):
@@ -329,9 +329,16 @@ class CartDelete(View):
         }, status=200)
 
 class ProductListView(View):
-    def get(self, request, category_id):
+    def get(self, request):
         try:
-            if category_id == None:
+            categories = Category.objects.all()
+            category_list = [category.pk for category in categories]
+            category = request.GET.get('category', None)
+
+            if category != None:
+                category = int(category)
+
+            if category not in category_list:
                 products = Product.objects.all()
                 products_list = []
 
@@ -354,7 +361,7 @@ class ProductListView(View):
                 return JsonResponse({'products_list': products_list}, status=201)
 
             else:
-                products = Product.objects.filter(category=category_id)
+                products = Product.objects.filter(category=category)
                 products_list = []
 
                 for product in products:
