@@ -16,22 +16,21 @@ from user.models import User
 
 
 class SubscribeOptionView(View):
-    def get(self, request):
-        category_id = request.GET.get('category', None)
-        product_instance_list = Product.objects.filter(category=category_id)[:5]
-
-        product_list = []
-
-        for product in product_instance_list:
-            product_dict = {}
-            product_dict['name']  = product.name
-            product_dict['price'] = product.price
-            product_list.append(product_dict)
-
-        return JsonResponse({
-            "message": "SUCCESS",
-            "product_list": product_list,
-        })
+    # def get(self, request):
+    #     category_id = request.GET.get('category', None)
+    #     product_instance_list = Product.objects.filter(category=category_id)[:5]
+    #
+    #     product_list = []
+    #     for product in product_instance_list:
+    #         product_dict = {}
+    #         product_dict['name']  = product.name
+    #         product_dict['price'] = product.price
+    #         product_list.append(product_dict)
+    #
+    #     return JsonResponse({
+    #         "message": "SUCCESS",
+    #         "product_list": product_list,
+    #     })
 
     def post(self, request):
         data  = json.loads(request.body)
