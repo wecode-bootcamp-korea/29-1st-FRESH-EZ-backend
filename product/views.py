@@ -108,10 +108,10 @@ class SubscribeOptionView(View):
                     product=Product.objects.get(id=product_id)
                 )
 
-            return JsonResponse({
-                "message" : "SUCCESS",
-                "food_length" : food_list_length,
-            })
+        return JsonResponse({
+            "message" : "SUCCESS",
+            "food_length" : food_list_length,
+        })
 
 class SubscribeTotalPriceView(View):
     def post(self, request):
