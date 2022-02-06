@@ -335,11 +335,16 @@ class ProductListView(View):
             category_list = [category.pk for category in categories]
             category = request.GET.get('category', None)
 
+            page = int(request.GET.get('page', 1))
+            page_size = 16
+            limit = page * page_size
+            offset = limit - page_size
+
             if category != None:
                 category = int(category)
 
             if category not in category_list:
-                products = Product.objects.all()
+                products = Product.objects.all()[offset:limit]
                 products_list = []
 
                 for product in products:
@@ -361,7 +366,7 @@ class ProductListView(View):
                 return JsonResponse({'products_list': products_list}, status=201)
 
             else:
-                products = Product.objects.filter(category=category)
+                products = Product.objects.filter(category=category)[offset:limit]
                 products_list = []
 
                 for product in products:
