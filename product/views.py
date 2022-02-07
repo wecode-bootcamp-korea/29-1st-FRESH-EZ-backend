@@ -355,6 +355,7 @@ class ProductListView(View):
 
                     product_dic = {
                         'name': product.name,
+                        'product_id' : product.pk,
                         'category': product.category.pk,
                         'price': product.price,
                         'small_desc' : product.small_desc,
@@ -377,6 +378,7 @@ class ProductListView(View):
 
                     product_dic = {
                         'name': product.name,
+                        'product_id': product.pk,
                         'category': product.category.pk,
                         'price': product.price,
                         'small_desc': product.small_desc,
