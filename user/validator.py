@@ -1,18 +1,52 @@
-import re
+class UserValidationRule:
+    def validate(self, user):
+        return all(getattr(self, 'validate_' + key)(user) for key in self.__dict__.keys())
 
-from django.core.exceptions import ValidationError
+class UserNamevalidationRule(UserValidationRule):
+    def __init__(self, max_length, min_length):
+        self.max_length = max_length
+        self.min_length = min_length
 
-from user.models import User
+    def validate_min_length(self, user):
+        return len(user["name"]) > self.min_length
+    
+    def validate_max_length(self, user):
+        return len(user["name"]) < self.max_length
+   
+class PhoneNumberValidationRule(UserValidationRule):
+    def __init__(self, phone_number_regex):
+        self.phone_number_regex = phone_number_regex
+
+    def validate_phone_number_regex(self, user):
+        return re.match(self.phone_number_regex, user.phone_number 
+ 
+class UserValidation:
+    def __init__(self, rules):
+        self.rules = rules
+
+    def validate(self, user):
+        return all(rule.validate(user) for rule in self.rules)
 
 
-def validate_email(email):
-    if not re.match("^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
-        raise ValidationError("ERROR : INVALID_VALUE (email)")
+# signup views.py
+user  = {"name" : "홍홍홍", "phone_number" : "010-7402-0990"}
+rules = [
+    UserNamevalidationRule(max_length = 10, min_length = 5), 
+    PasswordValidationRule(),
+    BirthDateValidationRule(),
+    PhoneNumberValidationRule('aa')
+]
 
-def validate_password(password):
-    if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}", password):
-        raise ValidationError("ERROR : INVALID_VALUE (password)")
+validation = UserValidationRule(rules)
+validation.validate(user)
 
-def validate_email_duplicate(email):
-    if User.objects.filter(email=email).exists():
-        raise ValidationError("ERROR : EMAIL_DUPLICATE")
+# signin views.py
+user  = {"name" : "홍홍홍", "password" : "xxxxxxx"}
+rules = [
+    UserNamevalidationRule(max_length = 100, min_length = 500), 
+    PhoneNumberValidationRule('111')
+    PasswordValidationRule(),
+]
+
+validation = UserValidationRule(rules)
+validation.validate(user)
