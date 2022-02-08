@@ -2,6 +2,7 @@ import json
 import datetime
 import random
 
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
@@ -10,10 +11,9 @@ import jwt
 from django.views import View
 
 from my_settings import JWT_SECRET_KEY, ALGORITHM
-from product.models import Product, Category, Option, Cart
+from product.models import Product, Category, Option, Cart, ProductAllergy, ProductImage
 from subscription.models import Subscription, SubscriptionProduct
 from user.models import User
-
 
 class SubscribeOptionView(View):
     # def get(self, request):
@@ -391,3 +391,67 @@ class ProductListView(View):
 
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=401)
+
+class FilteredProductListView(View):
+    def post(self,request):
+        try:
+            data = json.loads(request.body)
+
+            category = request.GET.get('category', None)
+            page     = int(request.GET.get('page', 1))
+
+            if category != None:
+                category = int(category)
+
+            page_size = 16
+            limit  = page * page_size
+            offset = limit - page_size
+
+            jwt_token   = data['jwt_token'].encode()
+            jwt_decoded = jwt.decode(jwt_token, JWT_SECRET_KEY, ALGORITHM)
+            user_id     = jwt_decoded['id']
+
+            user           = User.objects.get(id=user_id)
+            user_allergies = user.userallergy_set.all()
+
+            allergies         = []
+            products_filtered = []
+
+            for user_allergy in user_allergies:
+                allergies.append(user_allergy.allergy.pk)
+
+            filltered_products = ProductAllergy.objects.filter(~Q(allergy__in=allergies))[offset:limit]
+
+            for filtered_product in filltered_products:
+                product_image = str(ProductImage.objects.filter(product=filtered_product.product.pk)[0].image_url)
+
+                if filtered_product.product.category.pk == category:
+                    product_detail = {
+                        'name'               : filtered_product.product.name,
+                        'product_id'         : filtered_product.product.pk,
+                        'category'           : filtered_product.product.category.pk,
+                        'price'              : filtered_product.product.price,
+                        'small_desc'         : filtered_product.product.small_desc,
+                        'product_allergy_id' : filtered_product.allergy.pk,
+                        'product_image'      : product_image,
+                    }
+                    products_filtered.append(product_detail)
+
+                else:
+                    product_detail = {
+                        'name'              : filtered_product.product.name,
+                        'product_id'        : filtered_product.product.pk,
+                        'category'          : filtered_product.product.category.pk,
+                        'price'             : filtered_product.product.price,
+                        'small_desc'        : filtered_product.product.small_desc,
+                        'product_allergy_id': filtered_product.allergy.pk,
+                        'product_image'     : product_image,
+                    }
+                    products_filtered.append(product_detail)
+
+            return JsonResponse({'products_filtered':products_filtered}, status=201)
+
+        except KeyError:
+            return JsonResponse({'message':'KEY_ERROR'}, status=401)
+        except jwt.exceptions.InvalidSignatureError:
+            return JsonResponse({'message':'JWT_ERROR'}, status=401)
