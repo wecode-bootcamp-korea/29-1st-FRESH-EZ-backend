@@ -156,7 +156,7 @@ class SubscribeProductList(View):
         product_dict = dict()
         category_instance_list = Category.objects.all()
         for category in category_instance_list:
-            product_instance_list = Product.objects.filter(category=category.pk)
+            product_instance_list = Product.objects.filter(category=category.pk)[:5]
             product_list = list()
             for product in product_instance_list:
                 product_list.append(product.price)
