@@ -1,6 +1,7 @@
 from django.urls import path, include
 
-from product.views import SubscribeDetailView, ProductDetailView, SubscribeOptionView, CartList, CartAdd, CartDelete, ProductListView, SubscribeTotalPriceView
+from product.views import SubscribeDetailView, ProductDetailView, SubscribeOptionView, \
+    CartList, CartAdd, CartDelete, ProductListView, SubscribeTotalPriceView, FilteredProductListView
 
 urlpatterns = [
     path('/subscribe-option', SubscribeOptionView.as_view()),
@@ -10,5 +11,6 @@ urlpatterns = [
     path('/cart-list', CartList.as_view()),
     path('/cart-add', CartAdd.as_view()),
     path('/cart-delete', CartDelete.as_view()),
-    path('/menu', ProductListView.as_view())
+    path('/menu', ProductListView.as_view()),
+    path('/menu/filter', FilteredProductListView.as_view())
 ]
