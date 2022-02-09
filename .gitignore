@@ -396,6 +396,8 @@ my_settings.py
 04_upload_purchase_method.py
 05_upload_product.py
 06_upload_product_middle_table.py
+06_01_upload_product_purchasemethod.py
+06_02_upload_product_allergy.py
 07_upload_product_option.py
 08_upload_product_image.py
 09_upload_user.py
@@ -409,5 +411,7 @@ CSV_Product_middle_table.csv
 CSV_Product_option.csv
 CSV_Purchase_method.csv
 CSV_User.csv
+CSV_Product_Allergy.csv
+CSV_Product_Purchasemethod.csv
 
 */migrations/*

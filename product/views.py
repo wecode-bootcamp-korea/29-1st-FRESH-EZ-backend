@@ -151,6 +151,22 @@ class SubscribeOptionView(View):
             "food_list" : products_list,
         })
 
+class SubscribeProductList(View):
+    def get(self, request):
+        product_dict = dict()
+        category_instance_list = Category.objects.all()
+        for category in category_instance_list:
+            product_instance_list = Product.objects.filter(category=category.pk)
+            product_list = list()
+            for product in product_instance_list:
+                product_list.append(product.price)
+            product_dict[category.pk] = product_list
+
+        return JsonResponse({
+            "message": "SUCCESS",
+            "products": product_dict
+        })
+
 class SubscribeTotalPriceView(View):
     def post(self, request):
         data = json.loads(request.body)
