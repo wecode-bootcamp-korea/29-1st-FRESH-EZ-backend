@@ -120,3 +120,16 @@ class UserAllergyView(View):
 
         return JsonResponse({'user_allergies': user_allergies}, status=200)
 
+class EmailDupValidationView(View):
+    def post(self,request):
+        try:
+            data = json.loads(request.body)
+            email = data['email']
+
+            if User.objects.get(email=email):
+                return JsonResponse({"message": "Duplicate (email)"}, status=401)
+
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=401)
+        except User.DoesNotExist:
+            return JsonResponse({"message": "SUCCESS"}, status=200)
