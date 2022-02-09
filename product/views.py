@@ -1,116 +1,154 @@
 import json
-import datetime
-import random
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from datetime import datetime
+from datetime import timedelta
 
 import jwt
-
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django.views import View
 
-from my_settings import JWT_SECRET_KEY, ALGORITHM
-from product.models import Product, Category, Option, Cart
+
+
+from product.models import Product, Category, Cart, ProductAllergy, ProductImage, Option
 from subscription.models import Subscription, SubscriptionProduct
 from user.models import User
+from user.utils import login_decorator
 
+
+
+class ProductListView(View):
+    def get(self, request):
+        category_id     = request.GET.get('categoryId', None)
+        offset          = int(request.GET.get('offset', 0))
+        limit           = int(request.GET.get('limit', 100))
+
+        filter_set = {}
+
+        if category_id:
+            filter_set["category"] = int(category_id)
+
+
+        products = Product.objects.filter(**filter_set).select_related('category')\
+            .prefetch_related('productimage_set').prefetch_related('productallergy_set')[offset:offset+limit]
+
+        results = [
+            {
+                'name'       : product.name,
+                'category'   : product.category.pk,
+                'price'      : product.price,
+                'small_desc' : product.small_desc,
+                'image'      : str(product.productimage_set.first().image_url),
+                'allergy_id' : product.productallergy_set.first().allergy.pk,
+            } for product in products
+        ]
+
+        return JsonResponse({'products_list': results}, status=201)
+
+class FilteredProductListView(View):
+    @login_decorator
+    def post(self,request):
+        try:
+            user = request.user
+
+            category_id = request.GET.get('categoryId', None)
+            offset = int(request.GET.get('offset', 0))
+            limit = int(request.GET.get('limit', 100))
+
+            filter_set = {}
+
+            if category_id:
+                filter_set["category_id"] = int(category_id)
+
+            user_allergies = user.userallergy_set.all()
+            allergies = [user_allergy.allergy.pk for user_allergy in user_allergies]
+
+            filltered_products = Product.objects.filter(~Q(productallergy__allergy__in=allergies) & Q(**filter_set))\
+            .select_related('category').prefetch_related('productimage_set').prefetch_related('productallergy_set')[offset:offset+limit]
+
+            products_filtered = [
+                {
+                    'name'               : filtered_product.name,
+                    'product_id'         : filtered_product.pk,
+                    'category'           : filtered_product.category.pk,
+                    'price'              : filtered_product.price,
+                    'small_desc'         : filtered_product.small_desc,
+                    'allergy_id'         : filtered_product.productallergy_set.first().allergy.pk,
+                    'image'              : str(filtered_product.productimage_set.first().image_url),
+                } for filtered_product in filltered_products
+            ]
+
+            return JsonResponse({'products_filtered':products_filtered}, status=201)
+
+        except KeyError:
+            return JsonResponse({'message':'KEY_ERROR'}, status=401)
 
 class SubscribeOptionView(View):
-    # def get(self, request):
-    #     category_id = request.GET.get('category', None)
-    #     product_instance_list = Product.objects.filter(category=category_id)[:5]
-    #
-    #     product_list = []
-    #     for product in product_instance_list:
-    #         product_dict = {}
-    #         product_dict['name']  = product.name
-    #         product_dict['price'] = product.price
-    #         product_list.append(product_dict)
-    #
-    #     return JsonResponse({
-    #         "message": "SUCCESS",
-    #         "product_list": product_list,
-    #     })
-
+    @login_decorator
     def post(self, request):
-        data  = json.loads(request.body)
-
-        token           = data['jwt']
-        # email           = data['email']
-        size            = data['size']
-        food_day_count  = int(data['food_day_count'])
+        data = json.loads(request.body)
+        user = request.user
+        category_id = int(data['categoryId'])
+        subscription_size_id = data['size']
+        food_day_count = int(data['food_day_count'])
         food_week_count = int(data['food_week_count'])
-        food_period     = int(data['food_period'])
-        food_start      = data['food_start']
-        category_id     = int(data['category_id'])
-
-        payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
-        user         = User.objects.get(id=payload['id'])
-        # user         = User.objects.get(email=email)
-
-        if "product_list" in data:
-            product_list = data['product_list']
-
-        year, month, day = food_start.split("-")
-        year             = int(year)
-        month            = int(month)
-        day              = int(day)
-        subscribe_start  = datetime.datetime(year, month, day)
-        subscribe_end    = datetime.datetime(year, month, day) + datetime.timedelta(days=30)
-        size             = Option.objects.get(id=size)
-
+        food_period = int(data['food_period'])
+        start_date = datetime.strptime(data["food_start_date"], "%Y-%m-%d")
+        end_date = start_date + timedelta(days=30)
         food_count = food_day_count * food_week_count * food_period
         food_list_length = food_count
+        MAX_COUNT = 5
 
-        if "product_list" not in data:
-            subscribe = Subscription.objects.create(
-                user=user,
-                size=size,
-                food_day_count=food_day_count,
-                food_week_count=food_week_count,
-                food_period=food_period,
-                food_start=subscribe_start,
-                food_end=subscribe_end,
-            )
+        product_ids = 0
+        if 'product_ids' in data:
+            product_ids = data["product_ids"]
 
-            cycle_count = food_count // 5
+        option = Option.objects.get(id=subscription_size_id)
 
-            if food_count % 5 != 0:
+        subscribe = Subscription.objects.create(
+            user=user,
+            size=option,
+            food_day_count=food_day_count,
+            food_week_count=food_week_count,
+            food_period=food_period,
+            food_start=start_date,
+            food_end=end_date,
+        )
+
+        if not product_ids:
+            cycle_count = food_count // MAX_COUNT
+
+            if food_count % MAX_COUNT != 0:
                 cycle_count += 1
 
-            product_instance_list = []
+            products = []
             for i in range(0, cycle_count):
                 if food_count >= 5:
-                    product_instance_list += Product.objects.filter(category=category_id)[:5]
+                    products += Product.objects.filter(category=category_id)[:5]
                     food_count -= 5
                 elif food_count < 5:
-                    product_instance_list += Product.objects.filter(category=category_id)[:food_count]
+                    products += Product.objects.filter(category=category_id)[:food_count]
                     food_count = 0
 
-            for product in product_instance_list:
-                SubscriptionProduct.objects.create(
-                    subscription=subscribe,
-                    product=Product.objects.get(id=product.id)
-                )
-        elif "product_list" in data:
-            subscribe = Subscription.objects.create(
-                user=user,
-                size=size,
-                food_day_count=food_day_count,
-                food_week_count=food_week_count,
-                food_period=food_period,
-                food_start=subscribe_start,
-                food_end=subscribe_end,
+        for product in products:
+            SubscriptionProduct.objects.create(
+                subscription=subscribe,
+                product=Product.objects.get(id=product.pk)
             )
-            for product_id in product_list:
-                SubscriptionProduct.objects.create(
-                    subscription=subscribe,
-                    product=Product.objects.get(id=product_id)
-                )
+
+        products_list = []
+
+        for product in products:
+            products_list.append({
+                "name" : product.name,
+                "price" : product.price,
+            })
 
         return JsonResponse({
             "message" : "SUCCESS",
             "food_length" : food_list_length,
+            "food_list" : products_list,
         })
 
 class SubscribeTotalPriceView(View):
@@ -172,27 +210,26 @@ class ProductDetailView(View):
 
 class SubscribeDetailView(View):
     def get(self, request, category_id):
-        category = Category.objects.get(id=category_id)
-        product_instance_list = Product.objects.filter(category=category.id)
-        product_name_list = []
-        product_image_list = []
-        product_price_list = []
+
+        product_instance_list = Product.objects.filter(category=category_id)
+        product_list = []
 
         for product in product_instance_list:
-            product_name_list.append(product.name)
+            product_dict = {}
+            product_dict["name"] = product.name
 
             productimage = product.productimage_set.all()
             title_image_url = productimage[0].image_url
             str_title_image_url = str(title_image_url)
-            product_image_list.append(str_title_image_url)
+            product_dict["url"] = str_title_image_url
 
-            product_price_list.append(product.price)
+            product_dict["price"] = product.price
+
+            product_list.append(product_dict)
 
         return JsonResponse({
             "message": "SUCCESS",
-            "products" : product_name_list,
-            "image_list" : product_image_list,
-            "price": product_price_list,
+            "product_list": product_list,
         }, status=200)
 
 class CartList(View):
@@ -202,13 +239,13 @@ class CartList(View):
         try:
             # 유저 확인
             # token   = data['jwt']
-            email   = data['email']
+            email = data['email']
 
             # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
             # user    = User.objects.get(id=payload['id'])
-            user    = User.objects.get(email=email)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return JsonResponse({"message" : "INVALID_USER (email)"}, status=401)
+            return JsonResponse({"message": "INVALID_USER (email)"}, status=401)
 
         # 구독 장바구니
         subscription_instance_list = Subscription.objects.filter(user=user)
@@ -220,22 +257,22 @@ class CartList(View):
                 food_total_price = 0
                 for food in food_instance_list:
                     food_list.append({
-                        "subscription_food_name"  : food.product.name,
-                        "subscription_food_price" : food.product.price,
+                        "subscription_food_name": food.product.name,
+                        "subscription_food_price": food.product.price,
                     })
                     food_total_price += food.product.price
 
                 subscription_list.append({
-                    "id"               : subscription.id,
-                    "user"             : subscription.user.name,
-                    "size"             : subscription.size.name,
-                    "food_day_count"   : subscription.food_day_count,
-                    "food_week_count"  : subscription.food_week_count,
-                    "food_period"      : subscription.food_period,
-                    "food_start"       : subscription.food_start,
-                    "food_end"         : subscription.food_end,
-                    "food_list"        : food_list,
-                    "food_total_price" : food_total_price,
+                    "id": subscription.id,
+                    "user": subscription.user.name,
+                    "size": subscription.size.name,
+                    "food_day_count": subscription.food_day_count,
+                    "food_week_count": subscription.food_week_count,
+                    "food_period": subscription.food_period,
+                    "food_start": subscription.food_start,
+                    "food_end": subscription.food_end,
+                    "food_list": food_list,
+                    "food_total_price": food_total_price,
                 })
 
         # 단품 장바구니
@@ -302,13 +339,13 @@ class CartDelete(View):
         try:
             # 유저 확인
             # token   = data['jwt']
-            email   = data['email']
+            email = data['email']
 
             # payload = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
             # user    = User.objects.get(id=payload['id'])
-            user    = User.objects.get(email=email)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return JsonResponse({"message" : "INVALID_USER (email)"}, status=401)
+            return JsonResponse({"message": "INVALID_USER (email)"}, status=401)
 
         if 'cart_id' in data:
             cart_id = int(data['cart_id'])
@@ -327,65 +364,3 @@ class CartDelete(View):
         return JsonResponse({
             "message": "SUCCESS",
         }, status=200)
-
-class ProductListView(View):
-    def get(self, request):
-        try:
-            categories = Category.objects.all()
-            category_list = [category.pk for category in categories]
-            category = request.GET.get('category', None)
-
-            page = int(request.GET.get('page', 1))
-            page_size = 16
-            limit = page * page_size
-            offset = limit - page_size
-
-            if category != None:
-                category = int(category)
-
-            if category not in category_list:
-                products = Product.objects.all()[offset:limit]
-                products_list = []
-
-                for product in products:
-                    product_image = product.productimage_set.all()
-                    product_image_url = str(product_image[0].image_url)
-                    product_allergy = product.productallergy_set.all()
-                    product_allergy_id = product_allergy[0].allergy.pk
-
-                    product_dic = {
-                        'name': product.name,
-                        'category': product.category.pk,
-                        'price': product.price,
-                        'small_desc' : product.small_desc,
-                        'product_image' : product_image_url,
-                        'product_allergy_id' : product_allergy_id,
-                    }
-                    products_list.append(product_dic)
-
-                return JsonResponse({'products_list': products_list}, status=201)
-
-            else:
-                products = Product.objects.filter(category=category)[offset:limit]
-                products_list = []
-
-                for product in products:
-                    product_image = product.productimage_set.all()
-                    product_image_url = str(product_image[0].image_url)
-                    product_allergy = product.productallergy_set.all()
-                    product_allergy_id = product_allergy[0].allergy.pk
-
-                    product_dic = {
-                        'name': product.name,
-                        'category': product.category.pk,
-                        'price': product.price,
-                        'small_desc': product.small_desc,
-                        'product_image': product_image_url,
-                        'product_allergy_id': product_allergy_id,
-                    }
-                    products_list.append(product_dic)
-
-                return JsonResponse({'products_list': products_list}, status=201)
-
-        except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=401)

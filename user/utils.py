@@ -2,7 +2,7 @@ from django.http import JsonResponse
 
 import jwt
 
-from my_settings import JWT_SECRET_KEY, ALGORITHM
+from django.conf import settings
 from user.models import User
 
 
@@ -10,8 +10,7 @@ def login_decorator(func):
     def wrapper(self, request, *args, **kwargs):
         try:
             payload = request.headers.get('Authorization')
-            _, token = payload.split(" ")
-            payload      = jwt.decode(token, JWT_SECRET_KEY, ALGORITHM)
+            payload      = jwt.decode(payload, settings.JWT_SECRET_KEY, settings.ALGORITHM)
             user         = User.objects.get(id=payload['id'])
             request.user = user
         except jwt.exceptions.DecodeError:
