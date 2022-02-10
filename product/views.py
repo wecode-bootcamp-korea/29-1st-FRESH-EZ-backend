@@ -61,10 +61,15 @@ class FilteredProductListView(View):
             offset = int(request.GET.get('offset', 0))
             limit = int(request.GET.get('limit', 100))
 
-            filter_set = {}
+            filter_set = {
+                'category': 0,
+            }
 
             if category_id:
-                filter_set["category_id"] = int(category_id)
+                filter_set["category"] = int(category_id)
+
+            if filter_set["category"] == 0:
+                del (filter_set["category"])
 
             user_allergies = user.userallergy_set.all()
             allergies = [user_allergy.allergy.pk for user_allergy in user_allergies]
