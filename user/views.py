@@ -121,7 +121,7 @@ class UserAllergyView(View):
         return JsonResponse({'user_allergies': user_allergies}, status=200)
 
 class EmailDupValidationView(View):
-    def post(self,request):
+    def post(self, request):
         try:
             data = json.loads(request.body)
             email = data['email']
